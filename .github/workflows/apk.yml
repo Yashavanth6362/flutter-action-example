@@ -1,38 +1,31 @@
-name: APK Generator
+name: Generate Hamer Onion
 
 on:
-  push:
-    branches: [master]
+  workflow_dispatch:
 
 jobs:
-  build:
+  generate:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v1
-      - name: Setting up Flutter SDK
-        uses: subosito/flutter-action@v1
-        with:
-          channel: stable
-
-      - name: Fetch Packages
-        run: flutter pub get
-      #     - run: flutter test
-      - name: Build APK
-        run: flutter build apk
-
-      - name: Copy APK To Parent Directory
-        run: cp ./build/app/outputs/flutter-apk/app-release.apk ./app.apk
-
-      - name: Commit APK
-        run: git add ./app.apk
-
-      - name: Configure Github
+      - name: Install dependencies
         run: |
-          git config --local user.email "contact@ishandeveloper.com"
-          git config --local user.name "ishandeveloper"
-          git commit -m "Generated APK" -a
+          sudo apt-get update
+          sudo apt-get install -y git build-essential libsodium-dev
 
-      - name: Push changes
-        uses: ad-m/github-push-action@master
+      - name: Clone mkp224o
+        run: |
+          git clone https://github.com/cathugger/mkp224o.git
+          cd mkp224o
+          make
+
+      - name: Generate hamer.onion prefix
+        run: |
+          cd mkp224o
+          ./mkp224o hamer
+
+      - name: Upload generated keys
+        uses: actions/upload-artifact@v4
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          name: onion-service
+          path: mkp224o/*
